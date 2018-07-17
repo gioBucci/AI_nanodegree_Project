@@ -23,7 +23,7 @@ args = parse_train_input()
 # Load the images from the data folder.
 # The load_process_data function process images for training, validation and testing
 # It also reads the flower cathegory names from a json file 
-dataloaders, dataset_sizes, cat_to_name = load_process_data(args.data_dir)
+image_datasets, dataloaders, dataset_sizes, cat_to_name = load_process_data(args.data_dir)
 
 # If available run the training on cuda
 device = torch.device("cuda:0" if torch.cuda.is_available() & args.gpu else "cpu")
@@ -93,10 +93,11 @@ optimizer = optim.Adam(model.classifier.parameters(), lr=learn_r)
 scheduler = lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
 running_loss = {x: 0 for x in ['train', 'valid', 'test']}
+data_filename = 'track_performance' + str(date.today()) + '.csv'
     
 epochs = args.epochs
 steps = 0
-steps_to_print = 5
+steps_to_print = 30
 
 model.train()
 
@@ -137,9 +138,8 @@ for e in range(epochs):
                   "Validation Accuracy: {:.3f}".format(accuracy/dataset_sizes['valid']))
                 
             # Write thecurrent performance to a csv file (to later plot trends)
-            filename = 'track_performance' + str(date.today()) + '.csv'
-            fields = [running_loss['train'], running_loss['train']/dataset_sizes['valid'], accuracy.item()/dataset_sizes['valid']]
-            with open(os.path.join(args.save_dir, filename), 'a') as f:
+            fields = [running_loss['train']/steps_to_print, running_loss['train']/dataset_sizes['valid'], accuracy.item()/dataset_sizes['valid']]
+            with open(os.path.join(args.save_dir, data_filename), 'a') as f:
                 writer = csv.writer(f)
                 writer.writerow(fields)
                     
@@ -147,30 +147,6 @@ for e in range(epochs):
             
             # Switch the model back to training mode
             model.train()
-
-# Plot the training and validation losses to check if the model is overfitting
-data_filename = 'track_performance' + str(date.today()) + '.csv'
-x, y, z = np.loadtxt(data_filename, delimiter=',', unpack=True)
-
-fig = plt.figure(1)
-plt.subplot(121)
-plt.plot(range(len(x)), x, 'k', label='Training loss')
-plt.plot(range(len(y)), y, 'r', label='Validation loss')
-plt.xlabel('# iterations / 30')
-plt.ylabel('Loss', fontsize=14)
-plt.suptitle('NN performance during training and validation', fontsize=16)
-plt.legend()
-
-plt.subplot(122)
-plt.plot(range(len(z)), z, 'r', label='Validation accuracy')
-plt.xlabel('# iterations / 30')
-plt.ylabel('Accuracy', fontsize=14)
-plt.legend()
-
-fig.set_size_inches(w=10,h=5)
-plot_filename = "NNperformance_plot-" + str(date.today()) + ".pdf"
-fig.savefig( os.path.join(args.save_dir, plot_filename) )
-
 
 
 # ## Testing the network
@@ -219,4 +195,25 @@ filename = "checkpoint-" + str(date.today()) + ".pth"
 torch.save(checkpoint, os.path.join(args.save_dir, filename))
 
 
+# Plot the training and validation losses to check if the model is overfitting
+x, y, z = np.loadtxt(os.path.join(args.save_dir,data_filename), delimiter=',', unpack=True)
+
+fig = plt.figure(1)
+plt.subplot(121)
+plt.plot(range(len(x)), x, 'k', label='Training loss')
+plt.plot(range(len(y)), y, 'r', label='Validation loss')
+plt.xlabel('# iterations / 30')
+plt.ylabel('Loss', fontsize=14)
+plt.suptitle('NN performance during training and validation', fontsize=16)
+plt.legend()
+
+plt.subplot(122)
+plt.plot(range(len(z)), z, 'r', label='Validation accuracy')
+plt.xlabel('# iterations / 30')
+plt.ylabel('Accuracy', fontsize=14)
+plt.legend()
+
+fig.set_size_inches(w=10,h=5)
+plot_filename = "NNperformance_plot-" + str(date.today()) + ".pdf"
+fig.savefig( os.path.join(args.save_dir, plot_filename) )
 

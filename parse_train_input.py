@@ -32,7 +32,7 @@ def parse_train_input():
     
     parser.add_argument("--epochs",
                             help='Epochs',
-                            default = '1', type=int)
+                            default = '10', type=int)
     
     parser.add_argument("--gpu", help="use GPU for training",
                             action="store_true")

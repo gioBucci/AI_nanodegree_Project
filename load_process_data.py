@@ -46,4 +46,4 @@ def load_process_data(data_dir):
     with open('cat_to_name.json', 'r') as f:
         cat_to_name = json.load(f)
 
-    return dataloaders, dataset_sizes, cat_to_name
+    return image_datasets, dataloaders, dataset_sizes, cat_to_name
